@@ -1,12 +1,46 @@
 import tensorflow as tf
 import numpy as np
+import os
+
+
+
+testOutVal = []
+testVectorMerge = [[]]
+
+print(testVectorMerge)
+print(testOutVal)
+res = os.listdir("TestVectors/")
+print(res)
+for files in res:
+    testVector = []
+    with open('TestVectors/'+ files) as testUnit:
+        for line in testUnit:
+            arr = line.split()
+            strRange = 5
+            if(len(arr) == 8):
+                strRange = 6
+            for idx in range(2, strRange):
+                testVector.append(float(arr[idx]))
+    testVectorMerge.append(testVector)
+    version = files.split('_')
+    testOutVal.append(0.003 + int(version[0])*0.0002)
+
+testVectorMerge.remove([])
+print(testVectorMerge[0])
+print(testOutVal)
+
 
 model = tf.keras.models.Sequential([
-    tf.keras.Input(shape=(2,), name='input'),
-    # Первый скрытый слой со 10 нейронами
-    tf.keras.layers.Dense(10, input_shape=(2,), activation='relu', 
+    tf.keras.Input(shape=(50000,), name='input'),
+    # Три скрытых слой со 100 нейронами
+    tf.keras.layers.Dense(1000, input_shape=(50000,), activation='relu', 
                           kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.05)),
-    tf.keras.layers.Dense(1, name = 'output')
+    tf.keras.layers.Dense(1000, activation='relu', 
+                          kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.05)),
+    tf.keras.layers.Dense(1000, activation='relu', 
+                          kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.05)),                     
+    # Выходной слой со 1 нейроном 
+    tf.keras.layers.Dense(1),
 ])
 
 
@@ -14,11 +48,6 @@ model.summary()
 # Компилируем модель
 model.compile(loss='mean_squared_error', optimizer='adam', metrics=[tf.keras.metrics.MeanAbsoluteError()])
 
-X_test = np.array(np.random.random((3, 2)))
-Y_test = np.array(np.random.random((3)))
-X = [[0, 0], [1, 0], [0, 1], [1, 1]]
-Y = [[0], [1], [1], [0]]
-print(X, Y)
 
 # Если ошибка не уменьшается на протяжении указанного количества эпох, то процесс обучения прерывается и модель инициализируется весами с самым низким показателем параметра "monitor"
 early_stopping = tf.keras.callbacks.EarlyStopping(
@@ -38,18 +67,18 @@ model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
 
 # Сохраняет логи выполнения обучения, которые можно будет посмотреть в специальной среде TensorBoard
 tensorboard = tf.keras.callbacks.TensorBoard(
-    log_dir='XOR_log', # путь к папке где будут сохранены логи
+    log_dir='CopterTrain_log', # путь к папке где будут сохранены логи
 )
 
 # Обучение
-model.fit(X,Y,epochs = 100,
+model.fit(testVectorMerge,testOutVal,epochs = 300,
             callbacks = [
             early_stopping,
             model_checkpoint,
             tensorboard]) 
 
-model.save("XOR_model")
+model.save("Copter_model")
 
 
-predictions = model.predict([[0,0]])
+predictions = model.predict([testVectorMerge[1]])
 print(predictions)
